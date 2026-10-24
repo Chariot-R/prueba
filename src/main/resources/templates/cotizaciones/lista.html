@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Cotizaciones')}"></head>
+<body>
+<div class="app">
+    <aside th:replace="~{fragments/layout :: sidebar}"></aside>
+    <main class="contenido">
+        <header class="cabecera">
+            <div>
+                <h1>Cotizaciones</h1>
+                <div class="sub">Consulta, registro y seguimiento de cotizaciones</div>
+            </div>
+            <div class="acciones">
+                <a class="btn btn-primario" th:href="@{/cotizaciones/nueva}">+ Nueva cotización</a>
+            </div>
+        </header>
+
+        <div class="pagina">
+            <form class="tarjeta filtros" method="get" th:action="@{/cotizaciones}">
+                <div class="campo">
+                    <label for="texto">Buscar</label>
+                    <input id="texto" name="texto" th:value="${fTexto}" placeholder="Código, cliente o RUC/DNI">
+                </div>
+                <div class="campo">
+                    <label for="estado">Estado</label>
+                    <select id="estado" name="estado">
+                        <option value="">Todos</option>
+                        <option th:each="e : ${estados}" th:value="${e}" th:text="${e.etiqueta}"
+                                th:selected="${e == fEstado}"></option>
+                    </select>
+                </div>
+                <div class="campo">
+                    <label for="desde">Desde</label>
+                    <input id="desde" type="date" name="desde" th:value="${fDesde}">
+                </div>
+                <div class="campo">
+                    <label for="hasta">Hasta</label>
+                    <input id="hasta" type="date" name="hasta" th:value="${fHasta}">
+                </div>
+                <label class="check">
+                    <input type="checkbox" name="incluirCerradas" value="true" th:checked="${fIncluirCerradas}">
+                    Incluir anuladas y reemplazadas
+                </label>
+                <button class="btn" type="submit">Filtrar</button>
+            </form>
+
+            <div class="tarjeta">
+                <div class="tabla-envoltura">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Cliente</th>
+                            <th>Fecha</th>
+                            <th>Estado</th>
+                            <th class="num">Total (con IGV)</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="c : ${pagina.content}" class="clic"
+                            th:data-href="@{/cotizaciones/{id}(id=${c.id})}">
+                            <td><a th:href="@{/cotizaciones/{id}(id=${c.id})}" th:text="${c.codigoCompleto}">C-00001</a></td>
+                            <td th:text="${c.clienteNombre}">Cliente</td>
+                            <td th:text="${@fmt.fecha(c.fecha)}">01/01/2026</td>
+                            <td><span th:class="${@fmt.claseEstado(c.estado)}" th:text="${c.estadoEtiqueta}">Borrador</span></td>
+                            <td class="num" th:text="${@fmt.soles(c.montoTotal)}">S/ 0.00</td>
+                        </tr>
+                        <tr th:if="${pagina.empty}">
+                            <td colspan="5" class="vacio">No hay cotizaciones con estos filtros.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="paginacion" th:if="${pagina.totalPages > 1}">
+                    <span th:text="|Página ${pagina.number + 1} de ${pagina.totalPages} · ${pagina.totalElements} cotizaciones|"></span>
+                    <div class="acciones">
+                        <a class="btn btn-chico" th:if="${pagina.hasPrevious()}"
+                           th:href="@{/cotizaciones(pagina=${pagina.number - 1}, estado=${fEstado}, texto=${fTexto}, desde=${fDesde}, hasta=${fHasta}, incluirCerradas=${fIncluirCerradas})}">← Anterior</a>
+                        <a class="btn btn-chico" th:if="${pagina.hasNext()}"
+                           th:href="@{/cotizaciones(pagina=${pagina.number + 1}, estado=${fEstado}, texto=${fTexto}, desde=${fDesde}, hasta=${fHasta}, incluirCerradas=${fIncluirCerradas})}">Siguiente →</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<script>
+    document.querySelectorAll('tr[data-href]').forEach(function (tr) {
+        tr.addEventListener('click', function (e) {
+            if (e.target.tagName !== 'A') location.href = tr.dataset.href;
+        });
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('No encontrado')}"></head>
+<body>
+<div class="app">
+    <aside th:replace="~{fragments/layout :: sidebar}"></aside>
+    <main class="contenido">
+        <div class="pagina">
+            <div class="alerta alerta-aviso" th:text="${mensaje}">No encontrado</div>
+            <a class="btn" th:href="@{/cotizaciones}">← Volver a cotizaciones</a>
+        </div>
+    </main>
+</div>
+</body>
+</html>

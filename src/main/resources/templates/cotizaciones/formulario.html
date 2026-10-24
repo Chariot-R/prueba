@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${tituloPagina})}"></head>
+<body>
+<div class="app">
+    <aside th:replace="~{fragments/layout :: sidebar}"></aside>
+    <main class="contenido" id="app"
+          th:data-modo="${modo}"
+          th:data-id="${cotizacionId}"
+          th:data-margen-defecto="${margenDefecto}"
+          th:data-tasa-igv="${tasaIgv}"
+          th:data-base="@{/}">
+        <header class="cabecera">
+            <div>
+                <h1 th:text="${tituloPagina}">Nueva cotización</h1>
+                <div class="sub">Los precios incluyen IGV · Montos en soles (S/)</div>
+            </div>
+            <div class="acciones">
+                <a class="btn" th:href="${cotizacionId} ? @{/cotizaciones/{id}(id=${cotizacionId})} : @{/cotizaciones}">Cancelar</a>
+                <button class="btn btn-primario" type="button" id="btnGuardar">Guardar borrador</button>
+            </div>
+        </header>
+
+        <div class="pagina">
+            <div id="alertas"></div>
+
+            <section class="tarjeta">
+                <h2>Datos generales</h2>
+                <div class="rejilla">
+                    <div class="campo ancho-2">
+                        <label for="clienteId">Cliente <span class="req">*</span></label>
+                        <select id="clienteId" data-campo="clienteId">
+                            <option value="">Seleccione un cliente…</option>
+                            <option th:each="cl : ${clientes}" th:value="${cl.id}"
+                                    th:text="${cl.nombreRazonSocial} + ' · ' + ${cl.documento}"></option>
+                        </select>
+                    </div>
+                    <div class="campo ancho-2">
+                        <label for="solicitudId">Solicitud asociada</label>
+                        <select id="solicitudId" data-campo="solicitudId" disabled>
+                            <option value="">Sin solicitud</option>
+                        </select>
+                        <div class="ayuda">Opcional. Solo se muestran solicitudes abiertas del cliente.</div>
+                    </div>
+                    <div class="campo">
+                        <label for="margenAplicado">Margen por defecto (%) <span class="req">*</span></label>
+                        <input id="margenAplicado" data-campo="margenAplicado" type="number" min="0" max="100" step="0.01">
+                    </div>
+                    <div class="campo">
+                        <label for="diasValidez">Validez (días) <span class="req">*</span></label>
+                        <input id="diasValidez" data-campo="diasValidez" type="number" min="1" max="90" step="1" value="15">
+                    </div>
+                    <div class="campo ancho-2">
+                        <label for="observaciones">Observaciones</label>
+                        <textarea id="observaciones" data-campo="observaciones" maxlength="500" rows="2"></textarea>
+                    </div>
+                </div>
+            </section>
+
+            <section class="tarjeta">
+                <h2>
+                    <span>Detalle</span>
+                    <span class="acciones no-imprimir">
+                        <button class="btn btn-chico" type="button" data-agregar="PRODUCTO">+ Producto</button>
+                        <button class="btn btn-chico" type="button" data-agregar="MATERIAL">+ Material</button>
+                        <button class="btn btn-chico" type="button" data-agregar="MANO_OBRA">+ Mano de obra</button>
+                    </span>
+                </h2>
+                <div class="msg-error" data-error-de="lineas"></div>
+                <div class="tabla-envoltura envoltura-detalle">
+                    <table class="tabla-detalle">
+                        <thead>
+                        <tr>
+                            <th>#</th>
+                            <th class="col-tipo">Tipo</th>
+                            <th>Descripción</th>
+                            <th class="col-und">Unidad</th>
+                            <th class="col-cant num">Cantidad</th>
+                            <th class="col-monto num">Costo prov.</th>
+                            <th class="col-margen num">Margen %</th>
+                            <th class="col-monto num">P. unitario</th>
+                            <th class="col-monto num">Importe</th>
+                            <th class="col-x"></th>
+                        </tr>
+                        </thead>
+                        <tbody id="lineas"></tbody>
+                    </table>
+                </div>
+
+                <div class="totales">
+                    <div><span>Valor de venta</span><span id="tSubtotal">S/ 0.00</span></div>
+                    <div><span id="tIgvEtiqueta">IGV (18 %)</span><span id="tIgv">S/ 0.00</span></div>
+                    <div class="total"><span>Total</span><span id="tTotal">S/ 0.00</span></div>
+                    <div class="nota">Vista previa. El total definitivo lo calcula el sistema al guardar.</div>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+<script th:src="@{/js/calculo.js}"></script>
+<script th:src="@{/js/api.js}"></script>
+<script th:src="@{/js/formulario.js}"></script>
+</body>
+</html>

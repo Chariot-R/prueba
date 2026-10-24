@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Cotización ' + ${c.codigoCompleto})}"></head>
+<body>
+<div class="app">
+    <aside th:replace="~{fragments/layout :: sidebar}"></aside>
+    <main class="contenido" id="app" th:data-id="${c.id}" th:data-fila-version="${c.filaVersion}" th:data-base="@{/}">
+        <header class="cabecera">
+            <div>
+                <h1>
+                    Cotización <span th:text="${c.codigoCompleto}">C-00001</span>
+                    <span th:class="${@fmt.claseEstado(c.estado)}" th:text="${c.estadoEtiqueta}">Borrador</span>
+                </h1>
+                <div class="sub">
+                    <span th:text="|Registrada el ${@fmt.fechaHora(c.fecha)} por ${c.usuarioNombre}|"></span>
+                    <span th:if="${c.codigoOrigen}"> · Versión de
+                        <a th:href="@{/cotizaciones/{id}(id=${c.origenId})}" th:text="${c.codigoOrigen}"></a></span>
+                </div>
+            </div>
+            <div class="acciones">
+                <a class="btn" th:href="@{/cotizaciones}">← Volver</a>
+                <a class="btn" th:if="${c.editable}" th:href="@{/cotizaciones/{id}/editar(id=${c.id})}">Editar</a>
+                <button class="btn" type="button" th:if="${c.permiteNuevaVersion}" data-nueva-version>Nueva versión</button>
+                <button th:each="op : ${c.estadosSiguientes}" type="button"
+                        th:class="${op.valor == 'EMITIDA'} ? 'btn btn-primario' : (${op.valor == 'ANULADA'} ? 'btn btn-peligro' : 'btn')"
+                        th:data-estado="${op.valor}" th:data-motivo="${op.requiereMotivo}" th:data-etiqueta="${op.etiqueta}"
+                        th:text="${op.valor == 'EMITIDA'} ? 'Emitir' : (${op.valor == 'ANULADA'} ? 'Anular' : 'Marcar: ' + ${op.etiqueta})">Estado</button>
+                <button class="btn btn-peligro" type="button" th:if="${c.eliminable}" data-eliminar>Eliminar</button>
+                <button class="btn" type="button" th:unless="${c.editable}" onclick="window.print()">Imprimir</button>
+            </div>
+        </header>
+
+        <div class="pagina">
+            <div id="alertas">
+                <div class="alerta alerta-info" th:if="${param.guardado != null}">Cotización guardada correctamente.</div>
+            </div>
+            <div class="alerta alerta-info" th:if="${c.editable}">
+                Borrador: puede editarlo libremente. Al <strong>emitir</strong>, los precios quedan fijos aunque el proveedor los cambie después.
+            </div>
+            <div class="alerta alerta-aviso" th:if="${c.motivoNoCierre}" th:text="'Motivo de no cierre: ' + ${c.motivoNoCierre}"></div>
+            <div class="alerta alerta-aviso" th:if="${c.motivoAnulacion}" th:text="'Anulada: ' + ${c.motivoAnulacion}"></div>
+
+            <section class="tarjeta">
+                <h2>Datos generales</h2>
+                <div class="datos">
+                    <div class="dato" style="grid-column: span 2"><small>Cliente</small>
+                        <span th:text="${c.clienteNombre}"></span> · <span th:text="${c.clienteDocumento}"></span></div>
+                    <div class="dato"><small>Solicitud</small><span th:text="${c.solicitudDescripcion} ?: 'Sin solicitud'"></span></div>
+                    <div class="dato"><small>Margen por defecto</small><span th:text="${@fmt.numero(c.margenAplicado)} + ' %'"></span></div>
+                    <div class="dato"><small>Emisión</small><span th:text="${@fmt.fecha(c.fechaEmision)}"></span></div>
+                    <div class="dato"><small>Válida hasta</small>
+                        <span th:text="${c.fechaVencimiento != null} ? ${@fmt.fecha(c.fechaVencimiento)} : |${c.diasValidez} días desde la emisión|"></span></div>
+                    <div class="dato" th:if="${c.observaciones}" style="grid-column: span 2"><small>Observaciones</small><span th:text="${c.observaciones}"></span></div>
+                </div>
+            </section>
+
+            <section class="tarjeta">
+                <h2><span>Detalle</span><span class="nota">Precios con IGV incluido</span></h2>
+                <div class="tabla-envoltura">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>#</th><th>Tipo</th><th>Descripción</th><th>Unidad</th>
+                            <th class="num">Cantidad</th><th class="num">Costo prov.</th><th class="num">Margen</th>
+                            <th class="num">P. unitario</th><th class="num">Importe</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="l : ${c.lineas}">
+                            <td th:text="${l.nroLinea}">1</td>
+                            <td><span th:class="'tipo-chip tipo-' + ${l.tipoItem}" th:text="${l.tipoEtiqueta}"></span></td>
+                            <td>
+                                <span th:text="${l.descripcion}"></span>
+                                <div class="meta-linea" th:if="${l.proveedorNombre}" th:text="'Proveedor: ' + ${l.proveedorNombre}"></div>
+                                <div class="meta-linea aviso"
+                                     th:if="${l.costoActualProveedor != null and l.costoUnitario != null and l.costoActualProveedor.compareTo(l.costoUnitario) != 0}"
+                                     th:text="|Precio actual del proveedor: ${@fmt.soles(l.costoActualProveedor)} — esta cotización conserva ${@fmt.soles(l.costoUnitario)}|"></div>
+                            </td>
+                            <td th:text="${l.unidad}"></td>
+                            <td class="num" th:text="${@fmt.numero(l.cantidad)}"></td>
+                            <td class="num" th:text="${@fmt.soles(l.costoUnitario)}"></td>
+                            <td class="num" th:text="${l.margenPct != null} ? ${@fmt.numero(l.margenPct)} + ' %' : '—'"></td>
+                            <td class="num" th:text="${@fmt.soles(l.precioUnitario)}"></td>
+                            <td class="num"><strong th:text="${@fmt.soles(l.importe)}"></strong></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="totales">
+                    <div><span>Valor de venta</span><span th:text="${@fmt.soles(c.subtotal)}"></span></div>
+                    <div><span th:text="|IGV (${@fmt.numero(c.tasaIgv * 100)} %)|">IGV</span><span th:text="${@fmt.soles(c.igv)}"></span></div>
+                    <div class="total"><span>Total</span><span th:text="${@fmt.soles(c.montoTotal)}"></span></div>
+                </div>
+            </section>
+        </div>
+
+        <dialog id="dlgMotivo">
+            <h3 id="dlgTitulo">Cambiar estado</h3>
+            <div class="campo">
+                <label for="txtMotivo">Motivo <span class="req">*</span></label>
+                <textarea id="txtMotivo" maxlength="300" rows="3"></textarea>
+                <div class="msg-error" id="errMotivo"></div>
+            </div>
+            <div class="acciones">
+                <button class="btn" type="button" id="dlgCancelar">Cancelar</button>
+                <button class="btn btn-primario" type="button" id="dlgAceptar">Confirmar</button>
+            </div>
+        </dialog>
+    </main>
+</div>
+<script th:src="@{/js/api.js}"></script>
+<script th:src="@{/js/ver.js}"></script>
+</body>
+</html>
