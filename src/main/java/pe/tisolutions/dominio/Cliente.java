@@ -6,6 +6,9 @@ import jakarta.persistence.*;
 @Table(name = "cliente")
 public class Cliente {
 
+    public static final String NATURAL = "N";
+    public static final String JURIDICA = "J";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -22,11 +25,35 @@ public class Cliente {
     private String telefono;
     private String email;
 
+    @Column(name = "medio_contacto", length = 20)
+    private String medioContacto;
+
     @Column(nullable = false, length = 10)
     private String estado;
 
+    protected Cliente() {
+    }
+
+    /** Cliente que se registra solo desde la web. */
+    public static Cliente registradoPorWeb(String tipoCliente, String nombreRazonSocial, String documento,
+                                           String telefono, String email) {
+        Cliente c = new Cliente();
+        c.tipoCliente = tipoCliente;
+        c.nombreRazonSocial = nombreRazonSocial;
+        c.documento = documento;
+        c.telefono = telefono;
+        c.email = email;
+        c.medioContacto = "WEB";
+        c.estado = "ACTIVO";
+        return c;
+    }
+
     public boolean isActivo() {
         return "ACTIVO".equals(estado);
+    }
+
+    public boolean isEmpresa() {
+        return JURIDICA.equals(tipoCliente);
     }
 
     public Integer getId() { return id; }
@@ -35,5 +62,6 @@ public class Cliente {
     public String getDocumento() { return documento; }
     public String getTelefono() { return telefono; }
     public String getEmail() { return email; }
+    public String getMedioContacto() { return medioContacto; }
     public String getEstado() { return estado; }
 }

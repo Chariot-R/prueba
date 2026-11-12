@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -56,6 +57,16 @@ public class ManejadorErroresApi {
     @ExceptionHandler({ConflictoConcurrenciaException.class, ObjectOptimisticLockingFailureException.class})
     public ResponseEntity<ErrorRespuesta> concurrencia(RuntimeException ex) {
         return responder(HttpStatus.CONFLICT, "CONCURRENCIA", new ConflictoConcurrenciaException().getMessage());
+    }
+
+    @ExceptionHandler(CredencialesInvalidasException.class)
+    public ResponseEntity<ErrorRespuesta> credenciales(CredencialesInvalidasException ex) {
+        return responder(HttpStatus.UNAUTHORIZED, "CREDENCIALES", ex.getMessage());
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorRespuesta> denegado(AccessDeniedException ex) {
+        return responder(HttpStatus.FORBIDDEN, "DENEGADO", "No tienes permiso para realizar esta acción.");
     }
 
     @ExceptionHandler(RecursoNoEncontradoException.class)

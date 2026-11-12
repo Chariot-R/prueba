@@ -1,0 +1,194 @@
+<header class="cabecera">
+  <div>
+    <h1>{{ titulo() }}</h1>
+    <div class="sub">Los precios incluyen IGV · Montos en soles (S/)</div>
+  </div>
+  <div class="acciones">
+    <button class="btn" type="button" (click)="cancelar()">Cancelar</button>
+    <button class="btn btn-primario" type="button" (click)="guardar()" [disabled]="guardando() || cargando()">
+      {{ guardando() ? 'Guardando...' : 'Guardar borrador' }}
+    </button>
+  </div>
+</header>
+
+<div class="pagina">
+  @if (errorGeneral()) {
+    <div class="alerta alerta-error" role="alert">
+      {{ errorGeneral() }}
+      @if (resumenErrores().length) {
+        <ul>
+          @for (r of resumenErrores(); track $index) { <li>{{ r }}</li> }
+        </ul>
+      }
+    </div>
+  }
+
+  @if (config(); as cfg) {
+    <section class="tarjeta">
+      <h2>Datos generales</h2>
+      <div class="rejilla">
+        <div class="campo ancho-2">
+          <label for="clienteId">Cliente <span class="req">*</span></label>
+          <select id="clienteId" [ngModel]="cab.clienteId" (ngModelChange)="cambioCliente($event)"
+                  [class.invalido]="erroresCab()['clienteId']">
+            <option [ngValue]="null">Seleccione un cliente...</option>
+            @for (cl of cfg.clientes; track cl.id) {
+              <option [ngValue]="cl.id">{{ cl.nombre }} · {{ cl.documento }}</option>
+            }
+          </select>
+          @if (erroresCab()['clienteId']; as m) { <div class="msg-error">{{ m }}</div> }
+        </div>
+        <div class="campo ancho-2">
+          <label for="solicitudId">Solicitud asociada</label>
+          <select id="solicitudId" [(ngModel)]="cab.solicitudId" (ngModelChange)="marcarSucio('solicitudId')"
+                  [disabled]="!cab.clienteId" [class.invalido]="erroresCab()['solicitudId']">
+            <option [ngValue]="null">Sin solicitud</option>
+            @for (s of solicitudes(); track s.id) {
+              <option [ngValue]="s.id">{{ s.etiqueta }}</option>
+            }
+          </select>
+          @if (erroresCab()['solicitudId']; as m) {
+            <div class="msg-error">{{ m }}</div>
+          } @else {
+            <div class="ayuda">Opcional. Solo se muestran solicitudes abiertas del cliente.</div>
+          }
+        </div>
+        <div class="campo">
+          <label for="margenAplicado">Margen por defecto (%) <span class="req">*</span></label>
+          <input id="margenAplicado" inputmode="decimal" [ngModel]="cab.margenAplicado"
+                 (ngModelChange)="cambioMargen($event)" [class.invalido]="erroresCab()['margenAplicado']" />
+          @if (erroresCab()['margenAplicado']; as m) { <div class="msg-error">{{ m }}</div> }
+        </div>
+        <div class="campo">
+          <label for="diasValidez">Validez (días) <span class="req">*</span></label>
+          <input id="diasValidez" inputmode="numeric" [(ngModel)]="cab.diasValidez"
+                 (ngModelChange)="marcarSucio('diasValidez')" [class.invalido]="erroresCab()['diasValidez']" />
+          @if (erroresCab()['diasValidez']; as m) { <div class="msg-error">{{ m }}</div> }
+        </div>
+        <div class="campo ancho-2">
+          <label for="observaciones">Observaciones</label>
+          <textarea id="observaciones" rows="2" maxlength="500" [(ngModel)]="cab.observaciones"
+                    (ngModelChange)="marcarSucio('observaciones')"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <section class="tarjeta">
+      <h2>
+        <span>Detalle</span>
+        <span class="acciones no-imprimir">
+          <button class="btn btn-chico" type="button" (click)="agregar('PRODUCTO')">Agregar producto</button>
+          <button class="btn btn-chico" type="button" (click)="agregar('MATERIAL')">Agregar material</button>
+          <button class="btn btn-chico" type="button" (click)="agregar('MANO_OBRA')">Agregar mano de obra</button>
+        </span>
+      </h2>
+      @if (erroresCab()['lineas']; as m) { <div class="msg-error" style="margin-bottom:8px">{{ m }}</div> }
+
+      <div class="tabla-envoltura envoltura-detalle">
+        <table class="tabla-detalle">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th class="col-tipo">Tipo</th>
+              <th>Descripción</th>
+              <th class="col-und">Unidad</th>
+              <th class="col-cant num">Cantidad</th>
+              <th class="col-monto num">Costo prov.</th>
+              <th class="col-margen num">Margen %</th>
+              <th class="col-monto num">P. unitario</th>
+              <th class="col-monto num">Importe</th>
+              <th class="col-x"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (l of lineas(); track l.uid; let i = $index) {
+              @let r = calcular(l);
+              @let mt = meta(l);
+              <tr [class.fila-error]="erroresLinea()[i]">
+                <td>{{ i + 1 }}</td>
+                <td><span [class]="'tipo tipo-' + l.tipoItem">{{ etiquetaTipo[l.tipoItem] }}</span></td>
+                <td>
+                  @if (usaCatalogo(l)) {
+                    <div class="buscador">
+                      <input [id]="'desc-' + l.uid" autocomplete="off" maxlength="200" [value]="l.descripcion"
+                             [placeholder]="l.tipoItem === 'PRODUCTO' ? 'Buscar producto o proveedor...' : 'Buscar en catálogo o escribir material...'"
+                             (input)="cambiar(l, 'descripcion', $any($event.target).value)"
+                             (keydown)="teclas(l, $event)" (blur)="cerrarSugerencias(l)"
+                             [class.invalido]="errorDe(i, 'descripcion')" [title]="errorDe(i, 'descripcion') ?? ''" />
+                      @if (l.sugerencias; as sug) {
+                        <div class="sugerencias">
+                          @for (p of sug; track p.id; let j = $index) {
+                            <div [class.marcada]="j === l.marcada" (mousedown)="$event.preventDefault(); elegir(l, p)">
+                              <strong>{{ p.nombre }}</strong>
+                              <small>
+                                {{ p.proveedor }} · {{ C.solesCent(C.aCentesimas(p.precio.toFixed(2))) }} / {{ p.unidad }} ·
+                                <span [class.sin-stock]="p.stock <= 0">stock {{ p.stock }}</span>
+                              </small>
+                            </div>
+                          } @empty {
+                            <div><small>{{ l.tipoItem === 'MATERIAL' ? 'Sin coincidencias: se registrará como material fuera de catálogo.' : 'No hay productos activos con ese nombre.' }}</small></div>
+                          }
+                        </div>
+                      }
+                    </div>
+                    @if (mt.texto) { <div class="meta-linea" [class.aviso]="mt.aviso">{{ mt.texto }}</div> }
+                  } @else {
+                    <input [id]="'desc-' + l.uid" maxlength="200" placeholder="Ejemplo: instalación y configuración"
+                           [value]="l.descripcion" (input)="cambiar(l, 'descripcion', $any($event.target).value)"
+                           [class.invalido]="errorDe(i, 'descripcion')" [title]="errorDe(i, 'descripcion') ?? ''" />
+                  }
+                </td>
+                <td>
+                  <input maxlength="10" [value]="l.unidad" [readOnly]="unidadBloqueada(l)"
+                         (input)="cambiar(l, 'unidad', $any($event.target).value)"
+                         [class.invalido]="errorDe(i, 'unidad')" [title]="errorDe(i, 'unidad') ?? ''" />
+                </td>
+                <td>
+                  <input class="num" [id]="'cant-' + l.uid" inputmode="decimal" [value]="l.cantidad"
+                         (input)="cambiar(l, 'cantidad', $any($event.target).value)"
+                         [class.invalido]="errorDe(i, 'cantidad')" [title]="errorDe(i, 'cantidad') ?? ''" />
+                </td>
+                @if (l.tipoItem === 'MANO_OBRA') {
+                  <td><input class="num" value="—" disabled /></td>
+                  <td><input class="num" value="—" disabled /></td>
+                  <td>
+                    <input class="num" inputmode="decimal" [value]="l.precioUnitario"
+                           (input)="cambiar(l, 'precioUnitario', $any($event.target).value)"
+                           [class.invalido]="errorDe(i, 'precioUnitario')" [title]="errorDe(i, 'precioUnitario') ?? ''" />
+                  </td>
+                } @else {
+                  <td>
+                    <input class="num" inputmode="decimal" [value]="l.costoUnitario" [readOnly]="costoBloqueado(l)"
+                           [title]="costoBloqueado(l) ? 'Precio del proveedor al momento de cotizar' : (errorDe(i, 'costoUnitario') ?? '')"
+                           (input)="cambiar(l, 'costoUnitario', $any($event.target).value)"
+                           [class.invalido]="errorDe(i, 'costoUnitario')" />
+                  </td>
+                  <td>
+                    <input class="num" inputmode="decimal" [value]="l.margenPct"
+                           (input)="cambiar(l, 'margenPct', $any($event.target).value)"
+                           [class.invalido]="errorDe(i, 'margenPct')" [title]="errorDe(i, 'margenPct') ?? ''" />
+                  </td>
+                  <td><input class="num" readonly tabindex="-1" [value]="C.aTexto(r.precio)" /></td>
+                }
+                <td class="num"><strong>{{ r.importe == null ? '—' : C.solesCent(r.importe) }}</strong></td>
+                <td><button type="button" class="btn-texto" (click)="quitar(l)" title="Quitar línea">Quitar</button></td>
+              </tr>
+            } @empty {
+              <tr><td colspan="10" class="vacio">Agregue productos, materiales o mano de obra con los botones de arriba.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @let t = totales();
+      <div class="totales">
+        <div><span>Valor de venta</span><span>{{ C.solesCent(t.subtotal) }}</span></div>
+        <div><span>IGV ({{ tasaIgvBp() / 100 }} %)</span><span>{{ C.solesCent(t.igv) }}</span></div>
+        <div class="total"><span>Total</span><span>{{ C.solesCent(t.total) }}</span></div>
+        <div class="nota">Vista previa. El total definitivo lo calcula el sistema al guardar.</div>
+      </div>
+    </section>
+  } @else if (cargando()) {
+    <p class="ayuda">Cargando...</p>
+  }
+</div>

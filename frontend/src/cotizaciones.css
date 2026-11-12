@@ -1,0 +1,68 @@
+/* Estilos del módulo de cotizaciones y de la gestión de usuarios */
+
+.rejilla { display: grid; gap: 4px 18px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.rejilla .ancho-2 { grid-column: span 2; }
+
+.filtros { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto auto; gap: 10px; align-items: end; }
+.filtros .campo { margin-bottom: 0; }
+.filtros > * { min-width: 0; }
+.filtros .check { display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--texto-2); white-space: nowrap; padding-bottom: 9px; }
+.paginacion { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; color: var(--suave); font-size: 12px; }
+
+/* Detalle editable */
+.tabla-detalle td { vertical-align: middle; }
+.tabla-detalle input { padding: 6px 8px; font-size: 13px; }
+.tabla-detalle input.num { text-align: right; }
+.col-tipo { width: 112px; } .col-und { width: 74px; } .col-cant { width: 92px; }
+.col-monto { width: 112px; } .col-margen { width: 80px; } .col-x { width: 64px; }
+.fila-error td { background: #fdf5f5; }
+
+.tipo { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 3px; white-space: nowrap; }
+.tipo-PRODUCTO { background: #e6edfb; color: #1e40af; }
+.tipo-MATERIAL { background: #efeafb; color: #5b21b6; }
+.tipo-MANO_OBRA { background: #fbf3dd; color: #854d0e; }
+
+@media (min-width: 961px) { .envoltura-detalle { overflow: visible; } }
+
+/* Autocompletado de productos */
+.buscador { position: relative; }
+.sugerencias {
+  position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 2px); background: var(--blanco);
+  border: 1px solid var(--borde); border-radius: var(--radio); max-height: 260px; overflow-y: auto; min-width: 340px;
+  box-shadow: 0 4px 12px rgba(15, 30, 54, .12);
+}
+.sugerencias div { padding: 8px 10px; cursor: pointer; border-bottom: 1px solid var(--borde-suave); }
+.sugerencias div:hover, .sugerencias div.marcada { background: var(--primario-suave); }
+.sugerencias small { color: var(--suave); display: block; }
+.sin-stock { color: var(--peligro); }
+.meta-linea { font-size: 12px; color: var(--suave); margin-top: 3px; }
+.meta-linea.aviso { color: var(--aviso); }
+
+/* Totales */
+.totales { margin-left: auto; width: 320px; max-width: 100%; margin-top: 12px; }
+.totales div { display: flex; justify-content: space-between; padding: 5px 0; font-variant-numeric: tabular-nums; }
+.totales .total { border-top: 1px solid var(--borde); margin-top: 4px; padding-top: 10px; font-size: 18px; font-weight: 700; }
+.totales .nota { color: var(--suave); font-size: 12px; justify-content: flex-end; }
+
+/* Vista de una cotización */
+.datos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px 18px; }
+.dato small { display: block; font-size: 12px; color: var(--suave); margin-bottom: 2px; }
+.dato.ancho-2 { grid-column: span 2; }
+
+/* Usuarios */
+.form-linea { display: grid; grid-template-columns: 2fr 2fr 1fr auto; gap: 12px; align-items: end; }
+.form-linea .campo { margin-bottom: 0; }
+.celda-estados { display: flex; gap: 4px; flex-wrap: wrap; }
+.sin-salto { white-space: nowrap; }
+.clave-temporal code { font-family: Consolas, "Courier New", monospace; font-size: 15px; font-weight: 700; background: var(--blanco); border: 1px solid var(--ok-borde); padding: 2px 8px; border-radius: 3px; margin: 0 6px; user-select: all; }
+.clave-temporal > div + div { margin-top: 6px; }
+
+@media (max-width: 960px) {
+  .rejilla, .datos { grid-template-columns: 1fr 1fr; }
+  .filtros { grid-template-columns: 1fr 1fr; }
+  .form-linea { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .filtros, .rejilla, .datos { grid-template-columns: 1fr; }
+  .rejilla .ancho-2, .dato.ancho-2 { grid-column: auto; }
+}

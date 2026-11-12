@@ -11,6 +11,7 @@ import pe.tisolutions.dominio.*;
 import pe.tisolutions.dto.*;
 import pe.tisolutions.excepcion.*;
 import pe.tisolutions.repositorio.*;
+import pe.tisolutions.seguridad.UsuarioActual;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -38,14 +39,14 @@ public class CotizacionService {
     private final ServicioTecnicoRepository servicios;
     private final EntityManager em;
     private final BigDecimal tasaIgv;
-    private final Integer usuarioActualId;
+    private final UsuarioActual usuarioActual;
 
     public CotizacionService(CotizacionRepository cotizaciones, ClienteRepository clientes,
                              SolicitudRepository solicitudes, ProductoRepository productos,
                              UsuarioRepository usuarios, ServicioTecnicoRepository servicios,
                              EntityManager em,
                              @Value("${app.igv.tasa}") BigDecimal tasaIgv,
-                             @Value("${app.usuario-actual-id}") Integer usuarioActualId) {
+                             UsuarioActual usuarioActual) {
         this.cotizaciones = cotizaciones;
         this.clientes = clientes;
         this.solicitudes = solicitudes;
@@ -54,7 +55,7 @@ public class CotizacionService {
         this.servicios = servicios;
         this.em = em;
         this.tasaIgv = tasaIgv;
-        this.usuarioActualId = usuarioActualId;
+        this.usuarioActual = usuarioActual;
     }
 
     // =====================================================================
@@ -97,7 +98,7 @@ public class CotizacionService {
         Cotizacion c = new Cotizacion();
         c.setCodigo(String.format("C-%05d", cotizaciones.siguienteNumero()));
         c.setNumeroVersion(1);
-        c.setUsuario(usuarios.getReferenceById(usuarioActualId));
+        c.setUsuario(usuarios.getReferenceById(usuarioActual.idPersonal()));
         c.setEstado(EstadoCotizacion.BORRADOR);
         c.setTasaIgv(tasaIgv);
         aplicarCabecera(c, req, cliente, solicitud);
@@ -233,7 +234,7 @@ public class CotizacionService {
         nueva.setCodigo(origen.getCodigo());
         nueva.setNumeroVersion(cotizaciones.ultimaVersion(origen.getCodigo()) + 1);
         nueva.setCotizacionOrigen(origen);
-        nueva.setUsuario(usuarios.getReferenceById(usuarioActualId));
+        nueva.setUsuario(usuarios.getReferenceById(usuarioActual.idPersonal()));
         nueva.setEstado(EstadoCotizacion.BORRADOR);
         nueva.setTasaIgv(tasaIgv);
         nueva.setCliente(origen.getCliente());

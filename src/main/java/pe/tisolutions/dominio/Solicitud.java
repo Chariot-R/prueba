@@ -28,6 +28,20 @@ public class Solicitud {
     @Column(name = "fecha_creacion", nullable = false)
     private LocalDateTime fechaCreacion;
 
+    protected Solicitud() {
+    }
+
+    /** Solicitud de servicio que el cliente registra desde su cuenta web. */
+    public static Solicitud desdeWeb(Cliente cliente, String descripcion) {
+        Solicitud s = new Solicitud();
+        s.cliente = cliente;
+        s.canal = "WEB";
+        s.descripcion = descripcion;
+        s.estado = EstadoSolicitud.NUEVA;
+        s.fechaCreacion = LocalDateTime.now();
+        return s;
+    }
+
     public Integer getId() { return id; }
     public Cliente getCliente() { return cliente; }
     public String getCanal() { return canal; }

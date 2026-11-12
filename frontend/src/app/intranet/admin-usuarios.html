@@ -1,0 +1,132 @@
+<header class="cabecera">
+  <div>
+    <h1>Usuarios del personal</h1>
+    <div class="sub">Crea cuentas, restablece contraseñas y bloquea accesos</div>
+  </div>
+</header>
+
+<div class="pagina">
+  @if (error()) {
+    <div class="alerta alerta-error" role="alert">{{ error() }}</div>
+  }
+  @if (aviso()) {
+    <div class="alerta alerta-ok" role="status">{{ aviso() }}</div>
+  }
+  @if (clave(); as c) {
+    <div class="alerta alerta-ok clave-temporal">
+      <div>
+        Contraseña temporal para <strong>{{ c.email }}</strong>:
+        <code>{{ c.temporal }}</code>
+        <button class="btn btn-chico" type="button" (click)="copiar()">{{ copiado() ? 'Copiada' : 'Copiar' }}</button>
+      </div>
+      <div>
+        Entrégala en persona o por un canal privado. <strong>Solo se muestra esta vez</strong>; al ingresar,
+        el sistema le pedirá cambiarla.
+      </div>
+    </div>
+  }
+
+  <form class="tarjeta" (ngSubmit)="crear()">
+    <h2>Nuevo trabajador</h2>
+    <div class="form-linea">
+      <div class="campo">
+        <label for="nombre">Nombre completo</label>
+        <input id="nombre" name="nombre" maxlength="100" required [(ngModel)]="nuevo.nombre" />
+      </div>
+      <div class="campo">
+        <label for="email">Correo corporativo</label>
+        <input id="email" name="email" type="email" maxlength="120" required placeholder="nombre@tisolutions.pe"
+               [(ngModel)]="nuevo.email" />
+      </div>
+      <div class="campo">
+        <label for="rolId">Rol</label>
+        <select id="rolId" name="rolId" required [(ngModel)]="nuevo.rolId">
+          <option [ngValue]="null">Elegir...</option>
+          @for (r of roles(); track r.id) {
+            <option [ngValue]="r.id">{{ r.etiqueta }}</option>
+          }
+        </select>
+      </div>
+      <div class="campo">
+        <button class="btn btn-primario" type="submit" [disabled]="ocupado()">Crear cuenta</button>
+      </div>
+    </div>
+  </form>
+
+  <section class="tarjeta">
+    <h2>Cuentas <span class="nota">{{ usuarios().length }} en total</span></h2>
+    <div class="tabla-envoltura">
+      <table>
+        <thead>
+          <tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Último acceso</th><th>Acciones</th></tr>
+        </thead>
+        <tbody>
+          @for (u of usuarios(); track u.id) {
+            <tr>
+              <td>
+                <strong>{{ u.nombre }}</strong>
+                @if (u.esUsted) { <span class="estado" style="margin-left:6px">Tú</span> }
+              </td>
+              <td>{{ u.email }}</td>
+              <td>{{ u.rolEtiqueta }}</td>
+              <td><div class="celda-estados">
+                <span [class]="'estado estado-' + u.estado.toLowerCase()">{{ textoEstado(u.estado) }}</span>
+                @if (u.bloqueoTemporal) {
+                  <span class="estado estado-aviso" [title]="'Hasta ' + (u.bloqueadoHasta | fechaHora)">Bloqueo temporal</span>
+                }
+                @if (u.debeCambiarPassword) {
+                  <span class="estado" title="Aún no cambia su contraseña temporal">Clave temporal</span>
+                }
+              </div></td>
+              <td class="sin-salto">{{ u.ultimoAcceso ? (u.ultimoAcceso | fechaHora) : 'Nunca' }}</td>
+              <td>
+                <div class="acciones">
+                  <button class="btn btn-chico" type="button" (click)="abrirEdicion(u)">Editar</button>
+                  @if (!u.esUsted) {
+                    <button class="btn btn-chico" type="button" (click)="restablecer(u)">Restablecer clave</button>
+                    @if (u.estado === 'ACTIVO') {
+                      <button class="btn btn-chico btn-peligro" type="button" (click)="cambiarEstado(u, 'BLOQUEADO')">Bloquear</button>
+                    } @else {
+                      <button class="btn btn-chico" type="button" (click)="cambiarEstado(u, 'ACTIVO')">Activar</button>
+                    }
+                    @if (u.estado !== 'BAJA') {
+                      <button class="btn btn-chico btn-peligro" type="button" (click)="cambiarEstado(u, 'BAJA')">Dar de baja</button>
+                    }
+                  }
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="6" class="vacio">Cargando...</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<dialog #dlgEditar>
+  <h3>Editar trabajador</h3>
+  <p class="ayuda" style="margin-top:-6px">{{ edicion.email }}</p>
+  @if (errorEdicion()) {
+    <div class="alerta alerta-error">{{ errorEdicion() }}</div>
+  }
+  <form (ngSubmit)="guardarEdicion()">
+    <div class="campo">
+      <label for="edNombre">Nombre completo</label>
+      <input id="edNombre" name="edNombre" maxlength="100" [(ngModel)]="edicion.nombre" />
+    </div>
+    <div class="campo">
+      <label for="edRol">Rol</label>
+      <select id="edRol" name="edRol" [(ngModel)]="edicion.rolId">
+        @for (r of roles(); track r.id) {
+          <option [ngValue]="r.id">{{ r.etiqueta }}</option>
+        }
+      </select>
+    </div>
+    <div class="pie">
+      <button class="btn" type="button" (click)="cerrarEdicion()">Cancelar</button>
+      <button class="btn btn-primario" type="submit">Guardar</button>
+    </div>
+  </form>
+</dialog>

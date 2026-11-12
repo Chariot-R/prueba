@@ -1,0 +1,105 @@
+<header class="barra-cliente">
+  <span class="marca"><span class="marca-icono">TI</span> TI SOLUTIONS</span>
+  @if (sesion.cliente(); as s) {
+    <div class="usuario">
+      <span class="inicial">{{ s.nombre.charAt(0).toUpperCase() }}</span>
+      <div><strong>{{ s.nombre }}</strong><small>{{ s.rolEtiqueta }}</small></div>
+      <button type="button" (click)="salir()">Cerrar sesión</button>
+    </div>
+  }
+</header>
+
+<main class="pagina-cliente">
+  <h1 style="font-size:22px">Hola, {{ sesion.cliente()?.nombre }}</h1>
+  <p style="color:var(--suave); margin:4px 0 20px">Solicita servicios y revisa tus cotizaciones.</p>
+
+  @if (aviso()) {
+    <div class="alerta alerta-ok" role="status">{{ aviso() }}</div>
+  }
+  @if (error()) {
+    <div class="alerta alerta-error" role="alert">{{ error() }}</div>
+  }
+
+  @if (datos(); as d) {
+    <div class="rejilla-cliente">
+      <section class="tarjeta">
+        <h2>Mis datos</h2>
+        <dl class="datos-lista">
+          <dt>{{ d.empresa ? 'Razón social' : 'Nombre' }}</dt>
+          <dd>{{ d.nombre }}</dd>
+          @if (d.empresa) {
+            <dt>Persona de contacto</dt>
+            <dd>{{ d.contacto }}</dd>
+          }
+          <dt>{{ d.empresa ? 'RUC' : 'DNI' }}</dt>
+          <dd>{{ d.documento }}</dd>
+          <dt>Correo</dt>
+          <dd>{{ d.email }}</dd>
+          <dt>Celular</dt>
+          <dd>{{ d.telefono ? '+51 ' + d.telefono : '—' }}</dd>
+        </dl>
+      </section>
+
+      <section class="tarjeta">
+        <h2>Solicitar un servicio</h2>
+        <form (ngSubmit)="solicitar()">
+          <div class="campo">
+            <label for="descripcion">¿Qué necesitas?</label>
+            <textarea id="descripcion" name="descripcion" rows="3" maxlength="300"
+                      placeholder="Ejemplo: instalación de 4 cámaras de seguridad en mi local de Miraflores."
+                      [(ngModel)]="descripcion"></textarea>
+            <div class="ayuda">{{ descripcion().length }}/300</div>
+          </div>
+          <button class="btn btn-primario" type="submit" [disabled]="enviando()">
+            {{ enviando() ? 'Enviando...' : 'Enviar solicitud' }}
+          </button>
+        </form>
+      </section>
+    </div>
+
+    <section class="tarjeta">
+      <h2>Mis solicitudes</h2>
+      <div class="tabla-envoltura">
+        <table>
+          <thead><tr><th>N.°</th><th>Fecha</th><th>Descripción</th><th>Estado</th></tr></thead>
+          <tbody>
+            @for (s of d.solicitudes; track s.id) {
+              <tr>
+                <td>S-{{ s.id }}</td>
+                <td>{{ s.fecha | fecha }}</td>
+                <td>{{ s.descripcion }}</td>
+                <td><span class="estado">{{ textoEstadoSolicitud(s.estado) }}</span></td>
+              </tr>
+            } @empty {
+              <tr><td colspan="4" class="vacio">Aún no tienes solicitudes.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="tarjeta">
+      <h2>Mis cotizaciones</h2>
+      <div class="tabla-envoltura">
+        <table>
+          <thead><tr><th>Código</th><th>Fecha</th><th>Válida hasta</th><th class="num">Total</th><th>Estado</th></tr></thead>
+          <tbody>
+            @for (c of d.cotizaciones; track c.codigo) {
+              <tr>
+                <td>{{ c.codigo }}</td>
+                <td>{{ c.fecha | fecha }}</td>
+                <td>{{ c.vence | fecha }}</td>
+                <td class="num">{{ c.total | soles }}</td>
+                <td><span [class]="c.estado | claseEstado">{{ c.estadoEtiqueta }}</span></td>
+              </tr>
+            } @empty {
+              <tr><td colspan="5" class="vacio">Aún no tienes cotizaciones.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  } @else if (!error()) {
+    <p class="ayuda">Cargando...</p>
+  }
+</main>
