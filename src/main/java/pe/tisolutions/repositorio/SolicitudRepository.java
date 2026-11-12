@@ -9,4 +9,6 @@ import java.util.List;
 public interface SolicitudRepository extends JpaRepository<Solicitud, Integer> {
 
     List<Solicitud> findByClienteIdAndEstadoNotOrderByFechaCreacionDesc(Integer clienteId, EstadoSolicitud estado);
+
+    List<Solicitud> findByClienteIdOrderByFechaCreacionDesc(Integer clienteId);
 }

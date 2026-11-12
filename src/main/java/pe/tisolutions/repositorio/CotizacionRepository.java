@@ -10,6 +10,7 @@ import pe.tisolutions.dominio.Cotizacion;
 import pe.tisolutions.dominio.EstadoCotizacion;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface CotizacionRepository extends JpaRepository<Cotizacion, Integer> {
@@ -46,4 +47,7 @@ public interface CotizacionRepository extends JpaRepository<Cotizacion, Integer>
     Integer ultimaVersion(@Param("codigo") String codigo);
 
     boolean existsByCotizacionOrigenIdAndEstado(Integer origenId, EstadoCotizacion estado);
+
+    /** Cotizaciones que el cliente puede ver (las ya enviadas; nunca borradores). */
+    List<Cotizacion> findByClienteIdAndEstadoInOrderByFechaDesc(Integer clienteId, java.util.Collection<EstadoCotizacion> estados);
 }

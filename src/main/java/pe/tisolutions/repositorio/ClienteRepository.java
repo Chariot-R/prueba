@@ -8,4 +8,6 @@ import java.util.List;
 public interface ClienteRepository extends JpaRepository<Cliente, Integer> {
 
     List<Cliente> findByEstadoOrderByNombreRazonSocialAsc(String estado);
+
+    boolean existsByDocumento(String documento);
 }

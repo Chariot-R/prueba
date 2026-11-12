@@ -11,13 +11,17 @@ import java.util.List;
 
 public interface ProductoRepository extends JpaRepository<Producto, Integer> {
 
-    @Query("""
-            select p from Producto p join fetch p.proveedor pr
-            where p.activo = true
-              and (lower(p.nombre) like lower(concat('%', :q, '%'))
-                   or lower(pr.nombre) like lower(concat('%', :q, '%')))
-            order by p.nombre
-            """)
+    /**
+     * Búsqueda sin distinguir mayúsculas NI tildes: "camara" encuentra "Cámara".
+     * (La base usa Modern_Spanish_CI_AS, que sí distingue tildes; por eso el COLLATE ..._AI.)
+     */
+    @Query(value = """
+            SELECT p.* FROM producto p JOIN proveedor pr ON pr.id = p.proveedor_id
+            WHERE p.activo = 1
+              AND (p.nombre COLLATE Latin1_General_CI_AI LIKE '%' + :q + '%' COLLATE Latin1_General_CI_AI
+                   OR pr.nombre COLLATE Latin1_General_CI_AI LIKE '%' + :q + '%' COLLATE Latin1_General_CI_AI)
+            ORDER BY p.nombre
+            """, nativeQuery = true)
     List<Producto> buscarActivos(@Param("q") String q, Pageable pageable);
 
     @Query("select p from Producto p join fetch p.proveedor where p.id in :ids")

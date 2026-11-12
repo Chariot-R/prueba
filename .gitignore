@@ -1,0 +1,22 @@
+# Compilados de Maven (se generan solos con mvn)
+target/
+
+# IntelliJ: archivos personales de cada uno
+.idea/workspace.xml
+.idea/shelf/
+.idea/usage.statistics.xml
+*.iml
+
+# VS Code / Java: archivos locales
+.classpath
+.project
+.settings/
+.factorypath
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Configuración local con contraseñas (nunca subir)
+application-local.properties
+.env

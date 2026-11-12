@@ -1,0 +1,137 @@
+@if (c(); as c) {
+  <header class="cabecera">
+    <div>
+      <h1>
+        Cotización {{ c.codigoCompleto }}
+        <span [class]="c.estado | claseEstado">{{ c.estadoEtiqueta }}</span>
+      </h1>
+      <div class="sub">
+        Registrada el {{ c.fecha | fechaHora }} por {{ c.usuarioNombre }}
+        @if (c.codigoOrigen) {
+          · Versión de <a [routerLink]="['/intranet/cotizaciones', c.origenId]">{{ c.codigoOrigen }}</a>
+        }
+      </div>
+    </div>
+    <div class="acciones">
+      <a class="btn" routerLink="/intranet/cotizaciones">Volver</a>
+      @if (c.editable) {
+        <a class="btn" [routerLink]="['/intranet/cotizaciones', c.id, 'editar']">Editar</a>
+      }
+      @if (c.permiteNuevaVersion) {
+        <button class="btn" type="button" [disabled]="ocupado()" (click)="nuevaVersion()">Nueva versión</button>
+      }
+      @for (op of c.estadosSiguientes; track op.valor) {
+        <button type="button" [class]="claseBoton(op)" [disabled]="ocupado()" (click)="elegirEstado(op)">{{ textoBoton(op) }}</button>
+      }
+      @if (c.eliminable) {
+        <button class="btn btn-peligro" type="button" [disabled]="ocupado()" (click)="eliminar()">Eliminar</button>
+      }
+      @if (!c.editable) {
+        <button class="btn" type="button" (click)="imprimir()">Imprimir</button>
+      }
+    </div>
+  </header>
+
+  <div class="pagina">
+    @if (error()) {
+      <div class="alerta alerta-error" role="alert">{{ error() }}</div>
+    }
+    @if (aviso()) {
+      <div class="alerta alerta-ok" role="status">{{ aviso() }}</div>
+    }
+    @if (c.editable) {
+      <div class="alerta alerta-info">
+        Borrador: puedes editarlo libremente. Al <strong>emitir</strong>, los precios quedan fijos aunque el proveedor los cambie después.
+      </div>
+    }
+    @if (c.motivoNoCierre) {
+      <div class="alerta alerta-aviso">Motivo de no cierre: {{ c.motivoNoCierre }}</div>
+    }
+    @if (c.motivoAnulacion) {
+      <div class="alerta alerta-aviso">Anulada: {{ c.motivoAnulacion }}</div>
+    }
+
+    <section class="tarjeta">
+      <h2>Datos generales</h2>
+      <div class="datos">
+        <div class="dato ancho-2"><small>Cliente</small>{{ c.clienteNombre }} · {{ c.clienteDocumento }}</div>
+        <div class="dato"><small>Solicitud</small>{{ c.solicitudDescripcion ?? 'Sin solicitud' }}</div>
+        <div class="dato"><small>Margen por defecto</small>{{ c.margenAplicado | numero }} %</div>
+        <div class="dato"><small>Emisión</small>{{ c.fechaEmision | fecha }}</div>
+        <div class="dato">
+          <small>Válida hasta</small>
+          {{ c.fechaVencimiento ? (c.fechaVencimiento | fecha) : c.diasValidez + ' días desde la emisión' }}
+        </div>
+        @if (c.observaciones) {
+          <div class="dato ancho-2"><small>Observaciones</small>{{ c.observaciones }}</div>
+        }
+      </div>
+    </section>
+
+    <section class="tarjeta">
+      <h2><span>Detalle</span><span class="nota">Precios con IGV incluido</span></h2>
+      <div class="tabla-envoltura">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th><th>Tipo</th><th>Descripción</th><th>Unidad</th>
+              <th class="num">Cantidad</th><th class="num">Costo prov.</th><th class="num">Margen</th>
+              <th class="num">P. unitario</th><th class="num">Importe</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (l of c.lineas; track l.id) {
+              <tr>
+                <td>{{ l.nroLinea }}</td>
+                <td><span [class]="'tipo tipo-' + l.tipoItem">{{ l.tipoEtiqueta }}</span></td>
+                <td>
+                  {{ l.descripcion }}
+                  @if (l.proveedorNombre) { <div class="meta-linea">Proveedor: {{ l.proveedorNombre }}</div> }
+                  @if (precioCambiado(l.costoActualProveedor, l.costoUnitario)) {
+                    <div class="meta-linea aviso">
+                      Precio actual del proveedor: {{ l.costoActualProveedor | soles }}. Esta cotización conserva {{ l.costoUnitario | soles }}.
+                    </div>
+                  }
+                </td>
+                <td>{{ l.unidad }}</td>
+                <td class="num">{{ l.cantidad | numero }}</td>
+                <td class="num">{{ l.costoUnitario | soles }}</td>
+                <td class="num">{{ l.margenPct != null ? (l.margenPct | numero) + ' %' : '—' }}</td>
+                <td class="num">{{ l.precioUnitario | soles }}</td>
+                <td class="num"><strong>{{ l.importe | soles }}</strong></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="totales">
+        <div><span>Valor de venta</span><span>{{ c.subtotal | soles }}</span></div>
+        <div><span>IGV ({{ c.tasaIgv * 100 | numero }} %)</span><span>{{ c.igv | soles }}</span></div>
+        <div class="total"><span>Total</span><span>{{ c.montoTotal | soles }}</span></div>
+      </div>
+    </section>
+  </div>
+
+  <dialog #dlgMotivo>
+    <h3>Marcar como "{{ pendiente()?.etiqueta }}"</h3>
+    <div class="campo">
+      <label for="txtMotivo">Motivo <span class="req">*</span></label>
+      <textarea id="txtMotivo" rows="3" maxlength="300" [(ngModel)]="motivo" [class.invalido]="errorMotivo()"></textarea>
+      @if (errorMotivo()) { <div class="msg-error">{{ errorMotivo() }}</div> }
+    </div>
+    <div class="pie">
+      <button class="btn" type="button" (click)="cerrarMotivo()">Cancelar</button>
+      <button class="btn btn-primario" type="button" (click)="confirmarMotivo()">Confirmar</button>
+    </div>
+  </dialog>
+} @else {
+  <header class="cabecera"><div><h1>Cotización</h1></div></header>
+  <div class="pagina">
+    @if (error()) {
+      <div class="alerta alerta-error">{{ error() }}</div>
+      <a class="btn" routerLink="/intranet/cotizaciones">Volver a cotizaciones</a>
+    } @else {
+      <p class="ayuda">Cargando...</p>
+    }
+  </div>
+}

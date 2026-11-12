@@ -1,0 +1,87 @@
+<header class="cabecera">
+  <div>
+    <h1>Cotizaciones</h1>
+    <div class="sub">Consulta, registro y seguimiento de cotizaciones</div>
+  </div>
+  <div class="acciones">
+    <a class="btn btn-primario" routerLink="/intranet/cotizaciones/nueva">Nueva cotización</a>
+  </div>
+</header>
+
+<div class="pagina">
+  <form class="tarjeta filtros" (ngSubmit)="filtrar()">
+    <div class="campo">
+      <label for="texto">Buscar</label>
+      <input id="texto" name="texto" placeholder="Código, cliente o RUC/DNI" [(ngModel)]="filtros.texto" />
+    </div>
+    <div class="campo">
+      <label for="estado">Estado</label>
+      <select id="estado" name="estado" [(ngModel)]="filtros.estado">
+        <option value="">Todos</option>
+        @for (e of estados(); track e.valor) {
+          <option [value]="e.valor">{{ e.etiqueta }}</option>
+        }
+      </select>
+    </div>
+    <div class="campo">
+      <label for="desde">Desde</label>
+      <input id="desde" name="desde" type="date" [(ngModel)]="filtros.desde" />
+    </div>
+    <div class="campo">
+      <label for="hasta">Hasta</label>
+      <input id="hasta" name="hasta" type="date" [(ngModel)]="filtros.hasta" />
+    </div>
+    <label class="check">
+      <input type="checkbox" name="incluirCerradas" [(ngModel)]="filtros.incluirCerradas" />
+      Incluir anuladas y reemplazadas
+    </label>
+    <button class="btn" type="submit">Filtrar</button>
+  </form>
+
+  @if (error()) {
+    <div class="alerta alerta-error">{{ error() }}</div>
+  }
+
+  <section class="tarjeta">
+    <div class="tabla-envoltura">
+      <table>
+        <thead>
+          <tr><th>Código</th><th>Cliente</th><th>Fecha</th><th>Estado</th><th class="num">Total (con IGV)</th></tr>
+        </thead>
+        <tbody>
+          @if (resultado(); as r) {
+            @for (c of r.contenido; track c.id) {
+              <tr class="clic" (click)="abrir(c.id)">
+                <td class="sin-salto"><a [routerLink]="['/intranet/cotizaciones', c.id]" (click)="$event.stopPropagation()">{{ c.codigoCompleto }}</a></td>
+                <td>{{ c.clienteNombre }}</td>
+                <td class="sin-salto">{{ c.fecha | fecha }}</td>
+                <td><span [class]="c.estado | claseEstado">{{ c.estadoEtiqueta }}</span></td>
+                <td class="num">{{ c.montoTotal | soles }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="5" class="vacio">No hay cotizaciones con estos filtros.</td></tr>
+            }
+          } @else {
+            <tr><td colspan="5" class="vacio">Cargando...</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (resultado(); as r) {
+      @if (r.totalPaginas > 1) {
+        <div class="paginacion">
+          <span>Página {{ r.pagina + 1 }} de {{ r.totalPaginas }} · {{ r.totalElementos }} cotizaciones</span>
+          <div class="acciones">
+            @if (r.pagina > 0) {
+              <button class="btn btn-chico" type="button" (click)="filtrar(r.pagina - 1)">Anterior</button>
+            }
+            @if (r.pagina + 1 < r.totalPaginas) {
+              <button class="btn btn-chico" type="button" (click)="filtrar(r.pagina + 1)">Siguiente</button>
+            }
+          </div>
+        </div>
+      }
+    }
+  </section>
+</div>

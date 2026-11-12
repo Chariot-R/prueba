@@ -14,7 +14,7 @@ import java.util.Objects;
 
 /** Datos de apoyo para el formulario: búsqueda de productos y solicitudes del cliente. */
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/intranet/catalogo")
 public class CatalogoApiController {
 
     private final ProductoRepository productos;

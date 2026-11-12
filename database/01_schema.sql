@@ -14,6 +14,8 @@ USE tisolutions;
 GO
 
 /* ---------- Limpieza (orden inverso a las dependencias) ---------- */
+DROP TABLE IF EXISTS registro_acceso;   -- creadas por 03_login.sql
+DROP TABLE IF EXISTS cuenta_cliente;
 DROP TABLE IF EXISTS servicio_tecnico;
 DROP TABLE IF EXISTS tecnico;
 DROP TABLE IF EXISTS detalle_cotizacion;
